@@ -4,6 +4,7 @@ public class Koleksi {
     private String judul;
     private int tahunTerbit;
     private String kategori;
+    private int stokTersedia;
 
     public Koleksi() {
     }
@@ -14,6 +15,7 @@ public class Koleksi {
         this.judul = judul;
         this.tahunTerbit = tahunTerbit;
         this.kategori = kategori;
+        this.stokTersedia = stok;
     }
 
     public int getIdKoleksi() {
@@ -30,6 +32,14 @@ public class Koleksi {
 
     public void setStok(int stok) {
         this.stok = stok;
+    }
+
+    public int getStokTersedia() {
+        return this.stokTersedia;
+    }
+
+    public void setStokTersedia(int stokTersedia) {
+        this.stokTersedia = stokTersedia;
     }
 
     public String getJudul() {

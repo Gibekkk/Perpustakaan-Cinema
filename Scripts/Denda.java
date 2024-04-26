@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class Denda {
     private Pengembalian pengembalian;
     private int dendaTelat;
@@ -12,12 +15,28 @@ public class Denda {
     public Denda(Pengembalian pengembalian, boolean isTelat) {
         this.pengembalian = pengembalian;
         if(isTelat){
-            this.dendaTelat = pengembalian.getPeminjaman().getJumlahPinjam() * HARGATELAT;
+            String tglKembali = getPengembalian().getPeminjaman().getTransaksi().getTanggalKembali();
+            String tglPinjam = getPengembalian().getPeminjaman().getTransaksi().getTanggalPinjam();
+            this.dendaTelat = dateDifference(tglKembali, tglPinjam) * HARGATELAT;
         }
         if(pengembalian.getIsRusak()){
             this.dendaRusak = pengembalian.getPeminjaman().getJumlahPinjam() * HARGARUSAK;
         }
         this.isBayar = false;
+    }
+
+    public static int dateDifference(String date1, String date2) {
+        SimpleDateFormat obj = new SimpleDateFormat("yyyy-MM-dd");
+        try{ 
+            Date tgl1 = obj.parse(date1);
+            Date tgl2 = obj.parse(date2);
+            long time_difference = tgl1.getTime() - tgl2.getTime(); 
+            int days_difference = (int) (time_difference / (1000*60*60*24)) % 365;
+            return days_difference;
+        } catch(Exception e){
+            System.err.println("Something went wrong!");
+            return 0;
+        }
     }
 
     public Pengembalian getPengembalian() {

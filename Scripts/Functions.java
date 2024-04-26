@@ -19,8 +19,10 @@ public class Functions{
     static int masaPinjamanDosen = 7;
     static int masaPinjamanStaff = 5;
     static int masaPinjamanMahasiswa = 3;
+    static final int mataUang = 100;
     static String[] clientNav = new String[]{
         "My Info",
+        "My Transaction",
         "Logout"
     };
     static String[] pustakawanNav = new String[]{
@@ -29,6 +31,7 @@ public class Functions{
         "Add Collection",
         "Borrow Collection",
         "Return Collection",
+        "Pay Debt",
         "List User",
         "List Koleksi",
         "List Transaksi",
@@ -43,8 +46,11 @@ public class Functions{
                 isLoggedin = false;
                 login();
                 break;
+            case "My Transaction":
+                listTransaksi(false, getTransaksiByUser(client));
+                break;
             default:
-                client.showDetails(dendaList);
+                client.showDetails(dendaList, pembayaranList);
         }
         if(isLoggedin)navClient(client);
     }
@@ -77,6 +83,9 @@ public class Functions{
                 break;
             case "List Transaksi":
                 listTransaksi(true);
+                break;
+            case "Pay Debt":
+                bayarDenda();
                 break;
             default:
                 pustakawan.showDetails();
@@ -173,7 +182,8 @@ public class Functions{
             "Tahun Terbit",
             "Kategori",
             "Edisi",
-            "Jenis"
+            "Jenis",
+            "Stok Tersedia"
         };
         Object[][] rowData = dataGenerator(koleksiList.size(), columnNames);
         for(int i = 0; i < rowData.length; i++){
@@ -190,6 +200,7 @@ public class Functions{
                 rowData[i][4] = "";
                 rowData[i][5] = "CD";
             }
+            rowData[i][6] = data.getStokTersedia();
         }
         generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -202,7 +213,8 @@ public class Functions{
             "Tahun Terbit",
             "Kategori",
             "Edisi",
-            "Jenis"
+            "Jenis",
+            "Stok Tersedia"
         };
         Object[][] rowData = dataGenerator(koleksiList.size(), columnNames);
         for(int i = 0; i < rowData.length; i++){
@@ -219,6 +231,7 @@ public class Functions{
                 rowData[i][4] = "";
                 rowData[i][5] = "CD";
             }
+            rowData[i][6] = data.getStokTersedia();
         }
         generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -274,6 +287,120 @@ public class Functions{
         if(printFile)printTXT("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Transactions.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
     }
 
+    public static void listDenda(ArrayList<Denda> dendaList){
+        Object[] columnNames = new Object[]{
+            "No",
+            "ID Transaksi",
+            "Denda Telat",
+            "Denda Rusak",
+            "Total Denda",
+            "Denda Sisa",
+            "Kali Bayar"
+        };
+        Object[][] rowData = dataGenerator(dendaList.size(), columnNames);
+        for(int i = 0; i < rowData.length; i++){
+            Denda data = dendaList.get(i);
+            rowData[i][0] = i + 1;
+            rowData[i][1] = data.getPengembalian().getPeminjaman().getTransaksi().getIdTransaksi();
+            rowData[i][2] = data.getDendaTelat();
+            rowData[i][3] = data.getDendaRusak();
+            rowData[i][4] = (data.getDendaRusak() + data.getDendaTelat());
+            rowData[i][5] = getDendaSisa(data);
+            rowData[i][6] = getTotalBayar(data) + " Kali Bayar";
+        }
+        generateTable("Debt Details", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+    }
+
+    public static void bayarDenda() throws IOException{
+        ArrayList<Denda> dendaNunggak = getDendaNunggak();
+        if(dendaNunggak.size() > 0){
+            if(clientList.size() > 0){
+                int userIndex = 0;
+                String[] users = new String[clientList.size()];
+                for(int i = 0; i < users.length; i++){
+                    users[i] = clientList.get(i).getIdPengenal();
+                }
+                listUser(false);
+                String idUser = enumeratorSilence(users);
+                for(int j = 0; j < users.length; j++){
+                    if(idUser.matches(users[j])){
+                        userIndex = j;
+                    }
+                }
+                Client client = clientList.get(userIndex);
+                dendaNunggak = getDendaByUser(true, client);
+                int dendaIndex = 0;
+                String[] dendas = new String[dendaNunggak.size()];
+                for(int i = 0; i < dendas.length; i++){
+                    dendas[i] = Integer.toString(i);
+                }
+                listDenda(dendaNunggak);
+                String idDenda = enumeratorSilence(dendas);
+                for(int j = 0; j < dendas.length; j++){
+                    if(idDenda.matches(dendas[j])){
+                        dendaIndex = j;
+                    }
+                }
+                Denda denda = dendaNunggak.get(dendaIndex);
+                int dendaSisa = getDendaSisa(denda);
+                pembayaranList.add(new Pembayaran(denda, enumerator("Jenis Pembayaran:", new String[]{"Tunai", "QRIS", "Debit", "Kredit"}), inputUang("Jumlah Bayar: ", dendaSisa)));
+                if(getDendaSisa(denda) == 0){
+                    denda.setIsBayar(true);
+                }
+            } else{
+                System.out.println("No Client Available");
+            }
+        } else{
+            System.out.println("No Debt Available or All Cleared");
+        }
+    }
+
+    public static int getDendaSisa(Denda denda){
+        int dendaSisa = (denda.getDendaRusak() + denda.getDendaTelat());
+        for(Pembayaran pembayaran : pembayaranList){
+            if(pembayaran.getDenda() == denda){
+                dendaSisa -= pembayaran.getJumlahBayar();
+            }
+        }
+        return dendaSisa;
+    }
+
+    public static int getTotalBayar(Denda denda){
+        int totalBayar = 0;
+        for(Pembayaran pembayaran : pembayaranList){
+            if(pembayaran.getDenda() == denda){
+                totalBayar++;
+            }
+        }
+        return totalBayar;
+    }
+
+    public static ArrayList<Denda> getDendaNunggak(){
+        ArrayList<Denda> dendaNunggak = new ArrayList<Denda>();
+        for(Denda denda : dendaList){
+            if(!denda.getIsBayar()){
+                dendaNunggak.add(denda);
+            }
+        }
+        return dendaNunggak;
+    }
+
+    public static ArrayList<Denda> getDendaByUser(boolean nunggak, Client client){
+        ArrayList<Denda> dendaClient = new ArrayList<Denda>();
+        for(Denda denda : dendaList){
+            if(nunggak){
+                if(!denda.getIsBayar() && denda.getPengembalian().getPeminjaman().getTransaksi().getClient() == client){
+                    dendaClient.add(denda);
+                }
+            } else{
+                if(denda.getPengembalian().getPeminjaman().getTransaksi().getClient() == client){
+                    dendaClient.add(denda);
+                }
+            }
+        }
+        return dendaClient;
+    }
+
     public static void kembalikanKoleksi(Pustakawan pustakawan) throws IOException{
         if(clientList.size() > 0){
             int userIndex = 0;
@@ -300,6 +427,7 @@ public class Functions{
                 Transaksi transaksi = getTransaksiByID(pilihanTransaksi);
                 String tanggalKembali = inputDate("Tanggal Pengembalian");
                 transaksi.setTanggalKembali(tanggalKembali);
+                transaksi.setStatus("Pengembalian");
                 boolean isTelat = false;
                 int durasiPinjam = (client.getPosisi().matches("Mahasiswa")) ? masaPinjamanMahasiswa : (client.getPosisi().matches("Dosen")) ? masaPinjamanDosen : masaPinjamanStaff;
                 if(dateDifference(dateAdder(tanggalKembali, durasiPinjam), tanggalKembali) > durasiPinjam){
@@ -308,18 +436,37 @@ public class Functions{
                 ArrayList<Peminjaman> peminjamans = getPeminjamanByTransaksi(transaksi, client);
                 for(Peminjaman peminjaman : peminjamans){
                     Koleksi koleksi = peminjaman.getKoleksi();
-                    System.out.println("Nama Koleksi: " + koleksi.getJudul());
-                    System.out.println("Jenis Koleksi: " + ((koleksi instanceof BukuMajalah) ? "Buku/Majalah" : "CD"));
-                    if(koleksi instanceof BukuMajalah)System.out.println("ISBN/ISSN: " + ((BukuMajalah) koleksi).getISBN());
+                    Object[] columnNames = new Object[]{
+                        "Nama Koleksi",
+                        "Jenis Koleksi",
+                        "Jumlah Pinjaman",
+                        (koleksi instanceof BukuMajalah) ? "ISBN/ISSN" : "ID Koleksi"
+                    };
+                    Object[][] rowData = new Object[][]{{
+                        koleksi.getJudul(),
+                        ((koleksi instanceof BukuMajalah) ? "Buku/Majalah" : "CD"),
+                        peminjaman.getJumlahPinjam(),
+                        (koleksi instanceof BukuMajalah) ? ((BukuMajalah) koleksi).getISBN() : koleksi.getIdKoleksi()
+                    }};
+                    generateTable("Collection Details", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
                     boolean isRusak = inputBool("Koleksi Rusak", "Y", "N");
                     pengembalianList.add(new Pengembalian(peminjaman, isRusak, peminjaman.getKoleksi(), (isRusak) ? inputInt("Jumlah Rusak: ", 1, peminjaman.getJumlahPinjam()) : 0));
-                    Pengembalian pengembalian = pengembalianList.get(pengembalianList.size() - 1);
+                    Pengembalian pengembalian = pengembalianList.getLast();
+                    koleksi.setStokTersedia(koleksi.getStok() + peminjaman.getJumlahPinjam());
                     if(isRusak || isTelat){
                         dendaList.add(new Denda(pengembalian, isTelat));
                     }
                 }
+                if(checkDendaByTransaksi(transaksi))transaksi.setStatus("Lunas");
             }
         }
+    }
+
+    public static boolean checkDendaByTransaksi(Transaksi transaksi){
+        for(Denda denda : dendaList){
+            if(!denda.getIsBayar() && denda.getPengembalian().getPeminjaman().getTransaksi() == transaksi)return false;
+        }
+        return true;
     }
 
     public static Transaksi getTransaksiByID(int idTransaksi){
@@ -398,12 +545,12 @@ public class Functions{
         String[] collections = new String[koleksiList.size()];
         for(int k = 0; k < collections.length; k++){
             if(jenisKoleksi.matches("CD")){
-                if(koleksiList.get(k) instanceof CD){
+                if(koleksiList.get(k) instanceof CD && koleksiList.get(k).getStokTersedia() > 0){
                     collections[k] = Integer.toString(koleksiList.get(k).getIdKoleksi());
                     dataList.add(koleksiList.get(k));
                 }
             } else if(jenisKoleksi.matches("Buku/Majalah")){
-                if(koleksiList.get(k) instanceof BukuMajalah){
+                if(koleksiList.get(k) instanceof BukuMajalah && koleksiList.get(k).getStokTersedia() > 0){
                     collections[k] = Integer.toString(koleksiList.get(k).getIdKoleksi());
                     dataList.add(koleksiList.get(k));
                 }
@@ -416,7 +563,7 @@ public class Functions{
                 collectionIndex = j;
             }
         }
-        peminjamanList.add(new Peminjaman(transaksiList.getLast(), inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, koleksiList.get(collectionIndex).getStok()), koleksiList.get(collectionIndex)));
+        peminjamanList.add(new Peminjaman(transaksiList.getLast(), inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, koleksiList.get(collectionIndex).getStokTersedia()), koleksiList.get(collectionIndex)));
     }
 
     public static void addKoleksi(){
@@ -666,6 +813,25 @@ public class Functions{
             return enumeratorSilence(choices);
         }
         // Copyright By Gibek
+    }
+
+    public static int inputUang(String prompt, int max){
+        System.out.print(prompt);
+        try{
+            int value = Integer.parseInt(input.nextLine());
+            if(value > max){
+                System.out.println("\nYour Input Exeeds The Limit of " + max + "!");
+                return inputUang(prompt, max);
+            }else if(value % mataUang != 0){
+                System.out.println("\nYour Input Isn't Valid");
+                return inputUang(prompt, max);
+            } else{
+                return value;
+            }
+        } catch(Exception e){
+            System.out.println("\nWrong Input!");
+            return inputUang(prompt, max);
+        }
     }
 
     public static char jenisKelamin(){

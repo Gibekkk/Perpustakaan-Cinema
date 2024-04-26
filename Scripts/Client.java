@@ -25,7 +25,7 @@ public class Client {
         this.password = password;
     }
 
-    public void showDetails(ArrayList<Denda> dendaList) {
+    public void showDetails(ArrayList<Denda> dendaList, ArrayList<Pembayaran> pembayaranList) {
         int i = 1, totalDenda = 0;
         System.out.println("Your Details:");
         System.out.println(((posisi.matches("Mahasiswa")) ? "NIM: " : "NIK: ") + idPengenal);
@@ -42,13 +42,23 @@ public class Client {
         if(dendaList.size() > 0){
             for(Denda denda : dendaList){
                 if(denda.getPengembalian().getPeminjaman().getTransaksi().getClient() == this){
-                    if(!denda.getIsBayar())totalDenda += denda.getDendaRusak() + denda.getDendaTelat();
+                    if(!denda.getIsBayar())totalDenda += getDendaSisa(denda, pembayaranList);
                 }
             }
         }
         System.out.println("Total Denda: " + totalDenda);
         System.out.println("Username: " + username);
         System.out.println("Password: " + password);
+    }
+
+    public static int getDendaSisa(Denda denda, ArrayList<Pembayaran> pembayaranList){
+        int dendaSisa = (denda.getDendaRusak() + denda.getDendaTelat());
+        for(Pembayaran pembayaran : pembayaranList){
+            if(pembayaran.getDenda() == denda){
+                dendaSisa -= pembayaran.getJumlahBayar();
+            }
+        }
+        return dendaSisa;
     }
 
     public boolean checkNull(){
