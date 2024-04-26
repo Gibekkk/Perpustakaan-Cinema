@@ -129,7 +129,7 @@ public class Functions{
                 login();
                 break;
             case "Exit":
-                System.out.println("Bye!");
+                System.out.println("Bye! Credits To Gibek");
                 System.exit(0);
                 break;
         }
@@ -241,6 +241,7 @@ public class Functions{
         generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
     }
+    // WM Gbeks Brow
 
     public static void listTransaksi(boolean printFile) throws IOException{
         Object[] columnNames = new Object[]{
@@ -473,6 +474,7 @@ public class Functions{
         }
         return true;
     }
+    // Ibeks Lg Cuy
 
     public static Transaksi getTransaksiByID(int idTransaksi){
         for(Transaksi transaksi : transaksiList){
