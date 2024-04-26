@@ -1,37 +1,23 @@
 public class Pembayaran {
-    private Transaksi transaksi;
-    private boolean isBayar;
+    private Denda denda;
     private String jenisPembayaran;
     private int jumlahBayar;
 
     public Pembayaran() {
     }
 
-    public Pembayaran(Transaksi transaksi, boolean isBayar, String jenisPembayaran, int jumlahBayar) {
-        this.transaksi = transaksi;
-        this.isBayar = isBayar;
+    public Pembayaran(Denda denda, String jenisPembayaran, int jumlahBayar) {
+        this.denda = denda;
         this.jenisPembayaran = jenisPembayaran;
         this.jumlahBayar = jumlahBayar;
     }
 
-    public Transaksi getTransaksi() {
-        return this.transaksi;
+    public Denda getDenda() {
+        return this.denda;
     }
 
-    public void setTransaksi(Transaksi transaksi) {
-        this.transaksi = transaksi;
-    }
-
-    public boolean isIsBayar() {
-        return this.isBayar;
-    }
-
-    public boolean getIsBayar() {
-        return this.isBayar;
-    }
-
-    public void setIsBayar(boolean isBayar) {
-        this.isBayar = isBayar;
+    public void setDenda(Denda denda) {
+        this.denda = denda;
     }
 
     public String getJenisPembayaran() {

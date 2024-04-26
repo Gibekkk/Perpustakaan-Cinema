@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 public class Client {
     private String idPengenal;
     private String nama;
@@ -24,8 +25,8 @@ public class Client {
         this.password = password;
     }
 
-    public void showDetails(){
-        int i = 1;
+    public void showDetails(ArrayList<Denda> dendaList) {
+        int i = 1, totalDenda = 0;
         System.out.println("Your Details:");
         System.out.println(((posisi.matches("Mahasiswa")) ? "NIM: " : "NIK: ") + idPengenal);
         System.out.println("Nama: " + nama);
@@ -38,6 +39,14 @@ public class Client {
             i++;
         }
         System.out.println("Jenis Kelamin: " + jenisKelamin);
+        if(dendaList.size() > 0){
+            for(Denda denda : dendaList){
+                if(denda.getPengembalian().getPeminjaman().getTransaksi().getClient() == this){
+                    if(!denda.getIsBayar())totalDenda += denda.getDendaRusak() + denda.getDendaTelat();
+                }
+            }
+        }
+        System.out.println("Total Denda: " + totalDenda);
         System.out.println("Username: " + username);
         System.out.println("Password: " + password);
     }

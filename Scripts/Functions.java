@@ -4,6 +4,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.text.SimpleDateFormat;  
+import java.util.Date;   
 public class Functions{
     static Scanner input = new Scanner(System.in);
     static ArrayList<Client> clientList = new ArrayList<Client>();
@@ -12,7 +14,11 @@ public class Functions{
     static ArrayList<Pembayaran> pembayaranList = new ArrayList<Pembayaran>();
     static ArrayList<Peminjaman> peminjamanList = new ArrayList<Peminjaman>();
     static ArrayList<Pengembalian> pengembalianList = new ArrayList<Pengembalian>();
+    static ArrayList<Denda> dendaList = new ArrayList<Denda>();
     static ArrayList<Koleksi> koleksiList = new ArrayList<Koleksi>();
+    static int masaPinjamanDosen = 7;
+    static int masaPinjamanStaff = 5;
+    static int masaPinjamanMahasiswa = 3;
     static String[] clientNav = new String[]{
         "My Info",
         "Logout"
@@ -38,7 +44,7 @@ public class Functions{
                 login();
                 break;
             default:
-                client.showDetails();
+                client.showDetails(dendaList);
         }
         if(isLoggedin)navClient(client);
     }
@@ -130,11 +136,13 @@ public class Functions{
             "Prodi",
             "Posisi",
             "Jenis Kelamin",
+            "Total Denda",
             "Username",
             "Password"
         };
         Object[][] rowData = dataGenerator(clientList.size(), columnNames);
         for(int i = 0; i < rowData.length; i++){
+            int totalDenda = 0;
             Client data = clientList.get(i);
             rowData[i][0] = i + 1;
             rowData[i][1] = data.getIdPengenal();
@@ -143,8 +151,16 @@ public class Functions{
             rowData[i][4] = data.getProdi();
             rowData[i][5] = data.getPosisi();
             rowData[i][6] = data.getJenisKelamin();
-            rowData[i][7] = data.getUsername();
-            rowData[i][8] = data.getPassword();
+            if(dendaList.size() > 0){
+                for(Denda denda : dendaList){
+                    if(denda.getPengembalian().getPeminjaman().getTransaksi().getClient() == data){
+                        if(!denda.getIsBayar())totalDenda += denda.getDendaRusak() + denda.getDendaTelat();
+                    }
+                }
+            }
+            rowData[i][7] = totalDenda;
+            rowData[i][8] = data.getUsername();
+            rowData[i][9] = data.getPassword();
         }
         generateTable("Clients", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Clients", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Users.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -281,11 +297,26 @@ public class Functions{
                     transactions[i] = Integer.toString(dataTransaksi.get(i).getIdTransaksi());
                 }
                 int pilihanTransaksi = Integer.parseInt(enumeratorSilence(transactions));
-                Transaksi transaksi = getTransaksi(pilihanTransaksi);
-                transaksi.setTanggalKembali(inputDate("Tanggal Pengembalian"));
-                ArrayList<Peminjaman> peminjamans = getPeminjamanByTransaksi(transaksi);
+                Transaksi transaksi = getTransaksiByID(pilihanTransaksi);
+                String tanggalKembali = inputDate("Tanggal Pengembalian");
+                transaksi.setTanggalKembali(tanggalKembali);
+                boolean isTelat = false;
+                int durasiPinjam = (client.getPosisi().matches("Mahasiswa")) ? masaPinjamanMahasiswa : (client.getPosisi().matches("Dosen")) ? masaPinjamanDosen : masaPinjamanStaff;
+                if(dateDifference(dateAdder(tanggalKembali, durasiPinjam), tanggalKembali) > durasiPinjam){
+                    isTelat = true;
+                }
+                ArrayList<Peminjaman> peminjamans = getPeminjamanByTransaksi(transaksi, client);
                 for(Peminjaman peminjaman : peminjamans){
-                    pengembalianList.add(new Pengembalian(transaksi, inputBool("Buku Rusak", "Y", "N"), peminjaman.getKoleksi()));
+                    Koleksi koleksi = peminjaman.getKoleksi();
+                    System.out.println("Nama Koleksi: " + koleksi.getJudul());
+                    System.out.println("Jenis Koleksi: " + ((koleksi instanceof BukuMajalah) ? "Buku/Majalah" : "CD"));
+                    if(koleksi instanceof BukuMajalah)System.out.println("ISBN/ISSN: " + ((BukuMajalah) koleksi).getISBN());
+                    boolean isRusak = inputBool("Koleksi Rusak", "Y", "N");
+                    pengembalianList.add(new Pengembalian(peminjaman, isRusak, peminjaman.getKoleksi(), (isRusak) ? inputInt("Jumlah Rusak: ", 1, peminjaman.getJumlahPinjam()) : 0));
+                    Pengembalian pengembalian = pengembalianList.get(pengembalianList.size() - 1);
+                    if(isRusak || isTelat){
+                        dendaList.add(new Denda(pengembalian, isTelat));
+                    }
                 }
             }
         }
@@ -300,10 +331,10 @@ public class Functions{
         return new Transaksi();
     }
 
-    public static ArrayList<Peminjaman> getPeminjamanByTransaksi(Transaksi transaksi){
+    public static ArrayList<Peminjaman> getPeminjamanByTransaksi(Transaksi transaksi, Client client){
         ArrayList<Peminjaman> listData = new ArrayList<Peminjaman>();
         for(Peminjaman peminjaman : peminjamanList){
-            if(peminjaman.getClient() == client){
+            if(peminjaman.getTransaksi().getClient() == client && peminjaman.getTransaksi() == transaksi){
                 listData.add(peminjaman);
             }
         }
@@ -334,20 +365,36 @@ public class Functions{
                     userIndex = j;
                 }
             }
-            transaksiList.add(new Transaksi(generateID("transaksi"), inputInt("Jumlah Pinjaman: ", 1), inputDate("Tanggal Transaksi"), "", clientList.get(userIndex), pustakawan));
+            transaksiList.add(new Transaksi(generateID("transaksi"), 1, inputDate("Tanggal Transaksi"), "", clientList.get(userIndex), pustakawan));
             addPinjamKoleksi();
-            while(enumerator("Action:", new String[]{"Pilih Koleksi", "Done"}).matches("Input Buku")){
+            int jumlahItem = 1;
+            while(enumerator("Action:", new String[]{"Pilih Koleksi", "Done"}).matches("Pilih Koleksi")){
                 addPinjamKoleksi();
+                jumlahItem++;
             }
+            transaksiList.getLast().setJumlahItem(jumlahItem);
         } else{
             System.out.println("Collection or Client data not found!");
         }
     }
 
+    public static String[] koleksiChecker(){
+        boolean hasBuku = false;
+        boolean hasCD = false;
+        for(Koleksi koleksi : koleksiList){
+            if(koleksi instanceof BukuMajalah)hasBuku = true;
+            if(koleksi instanceof CD)hasCD = true;
+            if(hasBuku && hasCD)return new String[]{"Buku/Majalah", "CD"};
+        }
+        if(hasBuku)return new String[]{"Buku/Majalah"};
+        if(hasCD)return new String[]{"CD"};
+        return new String[]{};
+    }
+
     public static void addPinjamKoleksi() throws IOException{
         int collectionIndex = 0;
         ArrayList<Koleksi> dataList = new ArrayList<Koleksi>();
-        String jenisKoleksi = enumerator("Jenis Koleksi:", new String[]{"Buku/Majalah", "CD"});
+        String jenisKoleksi = enumerator("Jenis Koleksi:", koleksiChecker());
         String[] collections = new String[koleksiList.size()];
         for(int k = 0; k < collections.length; k++){
             if(jenisKoleksi.matches("CD")){
@@ -369,7 +416,7 @@ public class Functions{
                 collectionIndex = j;
             }
         }
-        peminjamanList.add(new Peminjaman(transaksiList.get(transaksiList.size() - 1), inputInt("Jumlah Pinjaman Jenis Ini: ", 1), koleksiList.get(collectionIndex)));
+        peminjamanList.add(new Peminjaman(transaksiList.getLast(), inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, koleksiList.get(collectionIndex).getStok()), koleksiList.get(collectionIndex)));
     }
 
     public static void addKoleksi(){
@@ -388,7 +435,7 @@ public class Functions{
         };
         switch(pilih){
             case "Buku/Majalah":
-                koleksiList.add(new BukuMajalah(generateID("koleksi"), inputInt("Masukkan Stock: "), inputText("Masukkan Judul: ", false), inputInt("Masukkan Tahun Terbit: ", 1900), enumerator("Pilih Genre Buku:", kategoriBuku), enumerator("Pilih Edisi Buku:", edisi)));
+                koleksiList.add(new BukuMajalah(generateID("koleksi"), inputInt("Masukkan Stock: "), inputText("Masukkan Judul: ", false), inputInt("Masukkan Tahun Terbit: ", 1900), enumerator("Pilih Genre Buku:", kategoriBuku), enumerator("Pilih Edisi Buku:", edisi), uniqueKeyMaker("ISBN/ISSN")));
                 break;
             case "CD":
                 koleksiList.add(new CD(generateID("koleksi"), inputInt("Masukkan Stock: "), inputText("Masukkan Judul: ", false), inputInt("Masukkan Tahun Terbit: ", 1900), enumerator("Pilih Genre CD:", kategoriCD)));
@@ -473,6 +520,16 @@ public class Functions{
         } else{
             System.out.println("\n" + keyType + " Sudah Terdaftar!");
             return primaryKeyMaker(keyType);
+        }
+    }
+
+    public static String uniqueKeyMaker(String keyType){
+        String key = inputTextNum("Masukkan " + keyType + ": ");
+        if(uniqueKeyCheck(key)){
+            return key;
+        } else{
+            System.out.println("\n" + keyType + " Sudah Terdaftar!");
+            return uniqueKeyMaker(keyType);
         }
     }
 
@@ -908,6 +965,19 @@ public class Functions{
         return true;
     }
 
+    public static boolean uniqueKeyCheck(String key){
+        if(koleksiList.size() > 0){
+            for(int i = 0; i < koleksiList.size(); i++){
+                if(koleksiList.get(i) instanceof BukuMajalah){
+                    if(key.toLowerCase().matches(((BukuMajalah) koleksiList.get(i)).getISBN())){
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     public static boolean printTXT(String bannerTitle, String tableFormat, Object[][] rowData, String pathToFile, Object[] columnNames, int dataLengthTotal) throws IOException{
         try{
             PrintWriter txt = new PrintWriter (pathToFile);
@@ -1002,5 +1072,32 @@ public class Functions{
         }
         formatTable += "n";
         return formatTable + "/" + dataLengthTotal;
+    }
+
+    public static int dateDifference(String date1, String date2) {
+        SimpleDateFormat obj = new SimpleDateFormat("yyyy-MM-dd");
+        try{ 
+            Date tgl1 = obj.parse(date1);
+            Date tgl2 = obj.parse(date2);
+            long time_difference = tgl1.getTime() - tgl2.getTime(); 
+            int days_difference = (int) (time_difference / (1000*60*60*24)) % 365;
+            return days_difference;
+        } catch(Exception e){
+            System.err.println("Something went wrong!");
+            return 0;
+        }
+    }
+
+    public static String dateAdder(String date, int days) {
+        SimpleDateFormat obj = new SimpleDateFormat("yyyy-MM-dd");
+        long msCounter = 86400000;
+        try{ 
+            Date tgl = obj.parse(date);
+            Date result = new Date(tgl.getTime() + msCounter * days);
+            return obj.format(result);
+        } catch(Exception e){
+            System.err.println("Something went wrong!");
+            return "";
+        }
     }
 }

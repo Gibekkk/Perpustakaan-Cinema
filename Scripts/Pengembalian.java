@@ -1,23 +1,25 @@
 public class Pengembalian {
-    private Transaksi transaksi;
+    private Peminjaman peminjaman;
     private boolean isRusak;
     private Koleksi koleksi;
+    private int totalRusak;
 
     public Pengembalian() {
     }
 
-    public Pengembalian(Transaksi transaksi, boolean isRusak, Koleksi koleksi) {
-        this.transaksi = transaksi;
+    public Pengembalian(Peminjaman peminjaman, boolean isRusak, Koleksi koleksi, int totalRusak) {
+        this.peminjaman = peminjaman;
         this.isRusak = isRusak;
         this.koleksi = koleksi;
+        this.totalRusak = totalRusak;
     }
 
-    public Transaksi getTransaksi() {
-        return this.transaksi;
+    public Peminjaman getPeminjaman() {
+        return this.peminjaman;
     }
 
-    public void setTransaksi(Transaksi transaksi) {
-        this.transaksi = transaksi;
+    public void setPeminjaman(Peminjaman peminjaman) {
+        this.peminjaman = peminjaman;
     }
 
     public boolean isIsRusak() {
@@ -38,6 +40,14 @@ public class Pengembalian {
 
     public void setKoleksi(Koleksi koleksi) {
         this.koleksi = koleksi;
+    }
+
+    public int getTotalRusak() {
+        return this.totalRusak;
+    }
+
+    public void setTotalRusak(int totalRusak) {
+        this.totalRusak = totalRusak;
     }
 
 }
