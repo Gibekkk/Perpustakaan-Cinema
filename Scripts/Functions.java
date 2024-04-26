@@ -163,7 +163,7 @@ public class Functions{
             if(dendaList.size() > 0){
                 for(Denda denda : dendaList){
                     if(denda.getPengembalian().getPeminjaman().getTransaksi().getClient() == data){
-                        if(!denda.getIsBayar())totalDenda += denda.getDendaRusak() + denda.getDendaTelat();
+                        if(!denda.getIsBayar())totalDenda += getDendaSisa(denda);
                     }
                 }
             }
@@ -214,6 +214,8 @@ public class Functions{
             "Kategori",
             "Edisi",
             "Jenis",
+            "Total Stok",
+            "ISBN/ISSN",
             "Stok Tersedia"
         };
         Object[][] rowData = dataGenerator(koleksiList.size(), columnNames);
@@ -227,11 +229,14 @@ public class Functions{
                 BukuMajalah buku = (BukuMajalah) data;
                 rowData[i][4] = buku.getEdisi();
                 rowData[i][5] = "Buku/Majalah";
+                rowData[i][7] = buku.getISBN();
             } else{
                 rowData[i][4] = "";
                 rowData[i][5] = "CD";
+                rowData[i][7] = "";
             }
-            rowData[i][6] = data.getStokTersedia();
+            rowData[i][6] = data.getStok();
+            rowData[i][8] = data.getStokTersedia();
         }
         generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -563,7 +568,9 @@ public class Functions{
                 collectionIndex = j;
             }
         }
-        peminjamanList.add(new Peminjaman(transaksiList.getLast(), inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, koleksiList.get(collectionIndex).getStokTersedia()), koleksiList.get(collectionIndex)));
+        int jumlahPinjam = inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, koleksiList.get(collectionIndex).getStokTersedia());
+        peminjamanList.add(new Peminjaman(transaksiList.getLast(), jumlahPinjam, koleksiList.get(collectionIndex)));
+        koleksiList.get(collectionIndex).setStokTersedia(koleksiList.get(collectionIndex).getStok() - jumlahPinjam);
     }
 
     public static void addKoleksi(){
