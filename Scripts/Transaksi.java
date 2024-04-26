@@ -5,6 +5,7 @@ public class Transaksi {
     private String tanggalKembali;
     private Client client;
     private Pustakawan pustakawan;
+    private String status;
 
     public Transaksi() {
     }
@@ -16,6 +17,7 @@ public class Transaksi {
         this.tanggalKembali = tanggalKembali;
         this.client = client;
         this.pustakawan = pustakawan;
+        this.status = "Peminjaman";
     }
 
     public int getIdTransaksi() {
@@ -64,6 +66,14 @@ public class Transaksi {
 
     public void setPustakawan(Pustakawan pustakawan) {
         this.pustakawan = pustakawan;
+    }
+
+    public String getStatus() {
+        return this.status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 
 }

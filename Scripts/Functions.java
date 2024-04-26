@@ -22,8 +22,10 @@ public class Functions{
         "Add User",
         "Add Collection",
         "Borrow Collection",
+        "Return Collection",
         "List User",
         "List Koleksi",
+        "List Transaksi",
         "Logout"
     };
 
@@ -58,11 +60,17 @@ public class Functions{
             case "Borrow Collection":
                 pinjamKoleksi(pustakawan);
                 break;
+            case "Return Collection":
+                kembalikanKoleksi(pustakawan);
+                break;
             case "List User":
-                listUser();
+                listUser(true);
                 break;
             case "List Koleksi":
-                listKoleksi();
+                listKoleksi(true);
+                break;
+            case "List Transaksi":
+                listTransaksi(true);
                 break;
             default:
                 pustakawan.showDetails();
@@ -113,7 +121,7 @@ public class Functions{
         mainMenu();
     }
 
-    public static void listUser() throws IOException{
+    public static void listUser(boolean printFile) throws IOException{
         Object[] columnNames = new Object[]{
             "No",
             "ID Pengenal",
@@ -128,7 +136,7 @@ public class Functions{
         Object[][] rowData = dataGenerator(clientList.size(), columnNames);
         for(int i = 0; i < rowData.length; i++){
             Client data = clientList.get(i);
-            rowData[i][1] = i + 1;
+            rowData[i][0] = i + 1;
             rowData[i][1] = data.getIdPengenal();
             rowData[i][2] = data.getNama();
             rowData[i][3] = data.getFakultas();
@@ -139,10 +147,10 @@ public class Functions{
             rowData[i][8] = data.getPassword();
         }
         generateTable("Clients", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
-        printTXT("Clients", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Users.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+        if(printFile)printTXT("Clients", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Users.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
     }
 
-    public static void listKoleksi() throws IOException{
+    public static void listKoleksi(boolean printFile) throws IOException{
         Object[] columnNames = new Object[]{
             "No",
             "Judul",
@@ -168,36 +176,200 @@ public class Functions{
             }
         }
         generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
-        printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+        if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
     }
 
-    public static void pinjamKoleksi(Pustakawan pustakawan){
-        int userIndex = 0;
-        String[] users = new String[clientList.size()];
-        for(int i = 0; i < users.length; i++){
-            users[i] = clientList.get(i).getNama();
-        }
-        String nama = enumerator("Pilih Peminjam:", users);
-        for(int j = 0; j < users.length; j++){
-            if(nama.matches(users[j])){
-                userIndex = j;
+    public static void listKoleksi(boolean printFile, ArrayList<Koleksi> koleksiList) throws IOException{
+        Object[] columnNames = new Object[]{
+            "No",
+            "Judul",
+            "Tahun Terbit",
+            "Kategori",
+            "Edisi",
+            "Jenis"
+        };
+        Object[][] rowData = dataGenerator(koleksiList.size(), columnNames);
+        for(int i = 0; i < rowData.length; i++){
+            Koleksi data = koleksiList.get(i);
+            rowData[i][0] = i + 1;
+            rowData[i][1] = data.getJudul();
+            rowData[i][2] = data.getTahunTerbit();
+            rowData[i][3] = data.getKategori();
+            if(data instanceof BukuMajalah){
+                BukuMajalah buku = (BukuMajalah) data;
+                rowData[i][4] = buku.getEdisi();
+                rowData[i][5] = "Buku/Majalah";
+            } else{
+                rowData[i][4] = "";
+                rowData[i][5] = "CD";
             }
         }
-        transaksiList.add(new Transaksi(generateID("transaksi"), inputInt("Jumlah Pinjaman: ", 1), inputDate("Tanggal Transaksi"), inputDate("Tanggal Kembali"), clientList.get(userIndex), pustakawan));
-        for(int i = 0; i < inputInt("Jumlah Judul Pinjaman: ", 1); i++){
-            int collectionIndex = 0;
-            String[] collections = new String[koleksiList.size()];
-            for(int k = 0; k < collections.length; k++){
-                collections[k] = clientList.get(k).getNama();
+        generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+        if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+    }
+
+    public static void listTransaksi(boolean printFile) throws IOException{
+        Object[] columnNames = new Object[]{
+            "No",
+            "ID Transaksi",
+            "Jumlah Item",
+            "Tanggal Peminjaman",
+            "Tanggal Pengembalian",
+            "Nama Client",
+            "Nama Pustakawan"
+        };
+        Object[][] rowData = dataGenerator(transaksiList.size(), columnNames);
+        for(int i = 0; i < rowData.length; i++){
+            Transaksi data = transaksiList.get(i);
+            rowData[i][0] = i + 1;
+            rowData[i][1] = data.getIdTransaksi();
+            rowData[i][2] = data.getJumlahItem();
+            rowData[i][3] = data.getTanggalPinjam();
+            rowData[i][4] = data.getTanggalKembali();
+            rowData[i][5] = data.getClient().getNama();
+            rowData[i][6] = data.getPustakawan().getNama();
+        }
+        generateTable("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+        if(printFile)printTXT("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Transactions.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+    }
+
+    public static void listTransaksi(boolean printFile, ArrayList<Transaksi> transaksiList) throws IOException{
+        Object[] columnNames = new Object[]{
+            "No",
+            "ID Transaksi",
+            "Jumlah Item",
+            "Tanggal Peminjaman",
+            "Tanggal Pengembalian",
+            "Nama Client",
+            "Nama Pustakawan"
+        };
+        Object[][] rowData = dataGenerator(transaksiList.size(), columnNames);
+        for(int i = 0; i < rowData.length; i++){
+            Transaksi data = transaksiList.get(i);
+            rowData[i][0] = i + 1;
+            rowData[i][1] = data.getIdTransaksi();
+            rowData[i][2] = data.getJumlahItem();
+            rowData[i][3] = data.getTanggalPinjam();
+            rowData[i][4] = data.getTanggalKembali();
+            rowData[i][5] = data.getClient().getNama();
+            rowData[i][6] = data.getPustakawan().getNama();
+        }
+        generateTable("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+        if(printFile)printTXT("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Transactions.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+    }
+
+    public static void kembalikanKoleksi(Pustakawan pustakawan) throws IOException{
+        if(clientList.size() > 0){
+            int userIndex = 0;
+            String[] users = new String[clientList.size()];
+            for(int i = 0; i < users.length; i++){
+                users[i] = clientList.get(i).getIdPengenal();
             }
-            String judul = enumerator("Pilih Koleksi:", collections);
-            for(int j = 0; j < collections.length; j++){
-                if(judul.matches(collections[j])){
-                    collectionIndex = j;
+            listUser(false);
+            String idUser = enumeratorSilence(users);
+            for(int j = 0; j < users.length; j++){
+                if(idUser.matches(users[j])){
+                    userIndex = j;
                 }
             }
-            peminjamanList.add(new Peminjaman(transaksiList.get(transaksiList.size() - 1), inputInt("Jumlah Pinjaman Jenis Ini: ", 1), koleksiList.get(collectionIndex)));
+            Client client = clientList.get(userIndex);
+            ArrayList<Transaksi> dataTransaksi = getTransaksiByUser(client);
+            if(dataTransaksi.size() > 0){
+                String[] transactions = new String[dataTransaksi.size()];
+                listTransaksi(false, dataTransaksi);
+                for(int i = 0; i < transactions.length; i++){
+                    transactions[i] = Integer.toString(dataTransaksi.get(i).getIdTransaksi());
+                }
+                int pilihanTransaksi = Integer.parseInt(enumeratorSilence(transactions));
+                Transaksi transaksi = getTransaksi(pilihanTransaksi);
+                transaksi.setTanggalKembali(inputDate("Tanggal Pengembalian"));
+                ArrayList<Peminjaman> peminjamans = getPeminjamanByTransaksi(transaksi);
+                for(Peminjaman peminjaman : peminjamans){
+                    pengembalianList.add(new Pengembalian(transaksi, inputBool("Buku Rusak", "Y", "N"), peminjaman.getKoleksi()));
+                }
+            }
         }
+    }
+
+    public static Transaksi getTransaksiByID(int idTransaksi){
+        for(Transaksi transaksi : transaksiList){
+            if(transaksi.getIdTransaksi() == idTransaksi){
+                return transaksi;
+            }
+        }
+        return new Transaksi();
+    }
+
+    public static ArrayList<Peminjaman> getPeminjamanByTransaksi(Transaksi transaksi){
+        ArrayList<Peminjaman> listData = new ArrayList<Peminjaman>();
+        for(Peminjaman peminjaman : peminjamanList){
+            if(peminjaman.getClient() == client){
+                listData.add(peminjaman);
+            }
+        }
+        return listData;
+    }
+
+    public static ArrayList<Transaksi> getTransaksiByUser(Client client){
+        ArrayList<Transaksi> listData = new ArrayList<Transaksi>();
+        for(Transaksi transaksi : transaksiList){
+            if(transaksi.getClient() == client){
+                listData.add(transaksi);
+            }
+        }
+        return listData;
+    }
+
+    public static void pinjamKoleksi(Pustakawan pustakawan) throws IOException{
+        if(koleksiList.size() > 0 && clientList.size() > 0){
+            int userIndex = 0;
+            String[] users = new String[clientList.size()];
+            for(int i = 0; i < users.length; i++){
+                users[i] = clientList.get(i).getIdPengenal();
+            }
+            listUser(false);
+            String idUser = enumeratorSilence(users);
+            for(int j = 0; j < users.length; j++){
+                if(idUser.matches(users[j])){
+                    userIndex = j;
+                }
+            }
+            transaksiList.add(new Transaksi(generateID("transaksi"), inputInt("Jumlah Pinjaman: ", 1), inputDate("Tanggal Transaksi"), "", clientList.get(userIndex), pustakawan));
+            addPinjamKoleksi();
+            while(enumerator("Action:", new String[]{"Pilih Koleksi", "Done"}).matches("Input Buku")){
+                addPinjamKoleksi();
+            }
+        } else{
+            System.out.println("Collection or Client data not found!");
+        }
+    }
+
+    public static void addPinjamKoleksi() throws IOException{
+        int collectionIndex = 0;
+        ArrayList<Koleksi> dataList = new ArrayList<Koleksi>();
+        String jenisKoleksi = enumerator("Jenis Koleksi:", new String[]{"Buku/Majalah", "CD"});
+        String[] collections = new String[koleksiList.size()];
+        for(int k = 0; k < collections.length; k++){
+            if(jenisKoleksi.matches("CD")){
+                if(koleksiList.get(k) instanceof CD){
+                    collections[k] = Integer.toString(koleksiList.get(k).getIdKoleksi());
+                    dataList.add(koleksiList.get(k));
+                }
+            } else if(jenisKoleksi.matches("Buku/Majalah")){
+                if(koleksiList.get(k) instanceof BukuMajalah){
+                    collections[k] = Integer.toString(koleksiList.get(k).getIdKoleksi());
+                    dataList.add(koleksiList.get(k));
+                }
+            }
+        }
+        listKoleksi(false, dataList);
+        String idKoleksi = enumeratorSilence(collections);
+        for(int j = 0; j < collections.length; j++){
+            if(idKoleksi.matches(collections[j])){
+                collectionIndex = j;
+            }
+        }
+        peminjamanList.add(new Peminjaman(transaksiList.get(transaksiList.size() - 1), inputInt("Jumlah Pinjaman Jenis Ini: ", 1), koleksiList.get(collectionIndex)));
     }
 
     public static void addKoleksi(){
@@ -294,6 +466,16 @@ public class Functions{
         }
     }
 
+    public static String primaryKeyMaker(String keyType){
+        String key = inputTextNum("Masukkan " + keyType + ": ");
+        if(primaryKeyCheck(key)){
+            return key;
+        } else{
+            System.out.println("\n" + keyType + " Sudah Terdaftar!");
+            return primaryKeyMaker(keyType);
+        }
+    }
+
     public static int generateID(String jenisID){
         jenisID = jenisID.toLowerCase();
         int id = 0;
@@ -314,12 +496,12 @@ public class Functions{
     public static void addUser(){
         System.out.println("Pendaftaran Client:");
         String posisi = enumerator("Posisi:", new String[] {"Dosen", "Staff", "Mahasiswa"});
-        clientList.add(new Client(inputTextNum("Masukkan " + ((posisi.matches("Mahasiswa")) ? "NIM" : "NIK") + ": "), toTitle(inputText("Masukkan Nama: ", false)), null, null, posisi, null, jenisKelamin(), "", null));
+        clientList.add(new Client(primaryKeyMaker((posisi.matches("Mahasiswa")) ? "NIM" : "NIK"), toTitle(inputText("Masukkan Nama: ", false)), null, null, posisi, null, jenisKelamin(), "", null));
         int clientIndex = (clientList.size() > 0) ? clientList.size() - 1 : 0;
         String[] fakultasProdi = prodiSelector();
         clientList.get(clientIndex).setFakultas(fakultasProdi[0]);
         clientList.get(clientIndex).setProdi(fakultasProdi[1]);
-        int jumlahTelp = inputInt("Jumlah Nomor Telepon: ", 1);
+        int jumlahTelp = inputInt("Jumlah Nomor Telepon: ", 1, 10);
         String[] noTelp = new String[jumlahTelp];
         for(int i = 0; i < jumlahTelp; i++){
             noTelp[i] = inputTextNum("Nomor Telepon " + (i + 1) + ": ");
@@ -333,7 +515,7 @@ public class Functions{
         System.out.println("Pendaftaran Pustakawan:");
         pustakawanList.add(new Pustakawan(generateID("pustakawan"), toTitle(inputText("Masukkan Nama: ", false)), inputEmail(), jenisKelamin(), null, "", null));
         int pustakawanIndex = (pustakawanList.size() > 0) ? pustakawanList.size() - 1 : 0;
-        int jumlahTelp = inputInt("Jumlah Nomor Telepon: ", 1);
+        int jumlahTelp = inputInt("Jumlah Nomor Telepon: ", 1, 10);
         String[] noTelp = new String[jumlahTelp];
         for(int i = 0; i < jumlahTelp; i++){
             noTelp[i] = inputTextNum("Nomor Telepon " + (i + 1) + ": ");
@@ -411,6 +593,24 @@ public class Functions{
         // Copyright By Gibek
     }
 
+    public static String enumeratorSilence(String[] choices){
+        System.out.print("Masukkan Pilihan: ");
+        int pilihan;
+        try{
+            pilihan = Integer.parseInt(input.nextLine());
+            if(pilihan <= choices.length && pilihan > 0){
+                return choices[pilihan-1];
+            } else{
+                System.out.println("\nWrong Input!");
+                return enumeratorSilence(choices);
+            }
+        } catch(Exception e){
+            System.out.println("\nWrong Input!");
+            return enumeratorSilence(choices);
+        }
+        // Copyright By Gibek
+    }
+
     public static char jenisKelamin(){
         if(inputBool("Jenis Kelamin", "M", "F")){
             return 'M';
@@ -420,14 +620,45 @@ public class Functions{
     }
 
     public static String inputDate(String prompt){
-        System.out.print(prompt + " (DD-MM-YYYY): ");
+        Pattern DATE_PATTERN = Pattern.compile(
+      "^((2000|2400|2800|(19|2[0-9])(0[48]|[2468][048]|[13579][26]))-02-29)$" 
+      + "|^(((19|2[0-9])[0-9]{2})-02-(0[1-9]|1[0-9]|2[0-8]))$"
+      + "|^(((19|2[0-9])[0-9]{2})-(0[13578]|10|12)-(0[1-9]|[12][0-9]|3[01]))$" 
+      + "|^(((19|2[0-9])[0-9]{2})-(0[469]|11)-(0[1-9]|[12][0-9]|30))$");
+        System.out.print(prompt + " (YYYY-MM-DD): ");
         try{
             String value = input.nextLine();
-            if(value.matches("") || !value.matches("^((19|2[0-9])[0-9]{2})-(0[1-9]|1[012])-(0[1-9]|[12][0-9]|3[01])$") || value.matches("^[\\s]*$")){
+            if(value.matches("") || !DATE_PATTERN.matcher(value).matches() || value.matches("^[\\s]*$")){
                 System.out.println("\nWrong Input!");
                 return inputDate(prompt);
             }else {
-                return value;
+                int date = Integer.parseInt(value.split("-")[2]);
+                int month = Integer.parseInt(value.split("-")[1]);
+                int year = Integer.parseInt(value.split("-")[0]);
+                boolean lolos = true;
+                switch(month){
+                    case 4:
+                    case 6:
+                    case 9:
+                    case 11:
+                    case 12:
+                        if(date > 30){
+                            System.out.println("\nWrong Input!");
+                            lolos = false;
+                        }
+                        break;
+                    case 2:
+                        if(year % 4 == 0 && date > 29){
+                            System.out.println("\nWrong Input!");
+                            lolos = false;
+                        }
+                        if(year % 4 != 0 && date > 28){
+                            System.out.println("\nWrong Input!");
+                            lolos = false;
+                        }
+                        break;
+                }
+                return (lolos) ? value : inputDate(prompt);
             }
         } catch(Exception e){
             System.out.println("\nWrong Input!");
@@ -666,6 +897,17 @@ public class Functions{
         }
     }
 
+    public static boolean primaryKeyCheck(String key){
+        if(clientList.size() > 0){
+            for(int i = 0; i < clientList.size(); i++){
+                if(key.toLowerCase().matches(clientList.get(i).getIdPengenal())){
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     public static boolean printTXT(String bannerTitle, String tableFormat, Object[][] rowData, String pathToFile, Object[] columnNames, int dataLengthTotal) throws IOException{
         try{
             PrintWriter txt = new PrintWriter (pathToFile);
@@ -684,7 +926,7 @@ public class Functions{
                 titlePadding += " ";
             }
             txt.printf(titleBanner + "%n");
-            txt.printf("|" + titlePadding + bannerTitle + " " + titlePadding + "|%n");
+            txt.printf("|" + titlePadding + ((bannerTitle.length() % 2 != 0) ? " " : "") + bannerTitle + " " + titlePadding + "|%n");
             txt.printf(titleBanner + "%n");
             txt.printf(tableFormat, columnNames);
             txt.printf(titleBanner + "%n");
@@ -715,7 +957,7 @@ public class Functions{
                 titlePadding += " ";
             }
             System.out.printf(titleBanner + "%n");
-            System.out.printf("|" + titlePadding + bannerTitle + " " + titlePadding + "|%n");
+            System.out.printf("|" + titlePadding + ((bannerTitle.length() % 2 != 0) ? " " : "") + bannerTitle + " " + titlePadding + "|%n");
             System.out.printf(titleBanner + "%n");
             System.out.printf(tableFormat, columnNames);
             System.out.printf(titleBanner + "%n");
