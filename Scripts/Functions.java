@@ -178,37 +178,7 @@ public class Functions{
     public static void listKoleksi(boolean printFile) throws IOException{
         Object[] columnNames = new Object[]{
             "No",
-            "Judul",
-            "Tahun Terbit",
-            "Kategori",
-            "Edisi",
-            "Jenis",
-            "Stok Tersedia"
-        };
-        Object[][] rowData = dataGenerator(koleksiList.size(), columnNames);
-        for(int i = 0; i < rowData.length; i++){
-            Koleksi data = koleksiList.get(i);
-            rowData[i][0] = i + 1;
-            rowData[i][1] = data.getJudul();
-            rowData[i][2] = data.getTahunTerbit();
-            rowData[i][3] = data.getKategori();
-            if(data instanceof BukuMajalah){
-                BukuMajalah buku = (BukuMajalah) data;
-                rowData[i][4] = buku.getEdisi();
-                rowData[i][5] = "Buku/Majalah";
-            } else{
-                rowData[i][4] = "";
-                rowData[i][5] = "CD";
-            }
-            rowData[i][6] = data.getStokTersedia();
-        }
-        generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
-        if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
-    }
-
-    public static void listKoleksi(boolean printFile, ArrayList<Koleksi> koleksiList) throws IOException{
-        Object[] columnNames = new Object[]{
-            "No",
+            "ID Koleksi",
             "Judul",
             "Tahun Terbit",
             "Kategori",
@@ -222,21 +192,60 @@ public class Functions{
         for(int i = 0; i < rowData.length; i++){
             Koleksi data = koleksiList.get(i);
             rowData[i][0] = i + 1;
-            rowData[i][1] = data.getJudul();
-            rowData[i][2] = data.getTahunTerbit();
-            rowData[i][3] = data.getKategori();
+            rowData[i][1] = data.getIdKoleksi();
+            rowData[i][2] = data.getJudul();
+            rowData[i][3] = data.getTahunTerbit();
+            rowData[i][4] = data.getKategori();
             if(data instanceof BukuMajalah){
                 BukuMajalah buku = (BukuMajalah) data;
-                rowData[i][4] = buku.getEdisi();
-                rowData[i][5] = "Buku/Majalah";
-                rowData[i][7] = buku.getISBN();
+                rowData[i][5] = buku.getEdisi();
+                rowData[i][6] = "Buku/Majalah";
+                rowData[i][8] = buku.getISBN();
             } else{
-                rowData[i][4] = "";
-                rowData[i][5] = "CD";
-                rowData[i][7] = "";
+                rowData[i][5] = "";
+                rowData[i][6] = "CD";
+                rowData[i][8] = "";
             }
-            rowData[i][6] = data.getStok();
-            rowData[i][8] = data.getStokTersedia();
+            rowData[i][7] = data.getStok();
+            rowData[i][9] = data.getStokTersedia();
+        }
+        generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+        if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
+    }
+
+    public static void listKoleksi(boolean printFile, ArrayList<Koleksi> koleksiList) throws IOException{
+        Object[] columnNames = new Object[]{
+            "No",
+            "ID Koleksi",
+            "Judul",
+            "Tahun Terbit",
+            "Kategori",
+            "Edisi",
+            "Jenis",
+            "Total Stok",
+            "ISBN/ISSN",
+            "Stok Tersedia"
+        };
+        Object[][] rowData = dataGenerator(koleksiList.size(), columnNames);
+        for(int i = 0; i < rowData.length; i++){
+            Koleksi data = koleksiList.get(i);
+            rowData[i][0] = i + 1;
+            rowData[i][1] = data.getIdKoleksi();
+            rowData[i][2] = data.getJudul();
+            rowData[i][3] = data.getTahunTerbit();
+            rowData[i][4] = data.getKategori();
+            if(data instanceof BukuMajalah){
+                BukuMajalah buku = (BukuMajalah) data;
+                rowData[i][5] = buku.getEdisi();
+                rowData[i][6] = "Buku/Majalah";
+                rowData[i][8] = buku.getISBN();
+            } else{
+                rowData[i][5] = "";
+                rowData[i][6] = "CD";
+                rowData[i][8] = "";
+            }
+            rowData[i][7] = data.getStok();
+            rowData[i][9] = data.getStokTersedia();
         }
         generateTable("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Collections", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Collections.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -251,7 +260,8 @@ public class Functions{
             "Tanggal Peminjaman",
             "Tanggal Pengembalian",
             "Nama Client",
-            "Nama Pustakawan"
+            "Nama Pustakawan",
+            "Status"
         };
         Object[][] rowData = dataGenerator(transaksiList.size(), columnNames);
         for(int i = 0; i < rowData.length; i++){
@@ -263,6 +273,7 @@ public class Functions{
             rowData[i][4] = data.getTanggalKembali();
             rowData[i][5] = data.getClient().getNama();
             rowData[i][6] = data.getPustakawan().getNama();
+            rowData[i][7] = data.getStatus();
         }
         generateTable("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Transactions.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -276,7 +287,8 @@ public class Functions{
             "Tanggal Peminjaman",
             "Tanggal Pengembalian",
             "Nama Client",
-            "Nama Pustakawan"
+            "Nama Pustakawan",
+            "Status"
         };
         Object[][] rowData = dataGenerator(transaksiList.size(), columnNames);
         for(int i = 0; i < rowData.length; i++){
@@ -288,6 +300,7 @@ public class Functions{
             rowData[i][4] = data.getTanggalKembali();
             rowData[i][5] = data.getClient().getNama();
             rowData[i][6] = data.getPustakawan().getNama();
+            rowData[i][7] = data.getStatus();
         }
         generateTable("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
         if(printFile)printTXT("Transactions", tableFormatter(rowData, columnNames).split("/")[0], rowData, "Transactions.txt", columnNames, Integer.parseInt(tableFormatter(rowData, columnNames).split("/")[1]));
@@ -522,7 +535,7 @@ public class Functions{
             transaksiList.add(new Transaksi(generateID("transaksi"), 1, inputDate("Tanggal Transaksi"), "", clientList.get(userIndex), pustakawan));
             addPinjamKoleksi();
             int jumlahItem = 1;
-            while(enumerator("Action:", new String[]{"Pilih Koleksi", "Done"}).matches("Pilih Koleksi")){
+            while(enumerator("Action:", ((koleksiChecker().length > 0) ? new String[]{"Pilih Koleksi", "Done"} : new String[]{"Done"})).matches("Pilih Koleksi")){
                 addPinjamKoleksi();
                 jumlahItem++;
             }
@@ -536,8 +549,8 @@ public class Functions{
         boolean hasBuku = false;
         boolean hasCD = false;
         for(Koleksi koleksi : koleksiList){
-            if(koleksi instanceof BukuMajalah)hasBuku = true;
-            if(koleksi instanceof CD)hasCD = true;
+            if(koleksi instanceof BukuMajalah && koleksi.getStokTersedia() > 0)hasBuku = true;
+            if(koleksi instanceof CD && koleksi.getStokTersedia() > 0)hasCD = true;
             if(hasBuku && hasCD)return new String[]{"Buku/Majalah", "CD"};
         }
         if(hasBuku)return new String[]{"Buku/Majalah"};
@@ -549,30 +562,33 @@ public class Functions{
         int collectionIndex = 0;
         ArrayList<Koleksi> dataList = new ArrayList<Koleksi>();
         String jenisKoleksi = enumerator("Jenis Koleksi:", koleksiChecker());
-        String[] collections = new String[koleksiList.size()];
-        for(int k = 0; k < collections.length; k++){
+        for(int k = 0; k < koleksiList.size(); k++){
             if(jenisKoleksi.matches("CD")){
                 if(koleksiList.get(k) instanceof CD && koleksiList.get(k).getStokTersedia() > 0){
-                    collections[k] = Integer.toString(koleksiList.get(k).getIdKoleksi());
                     dataList.add(koleksiList.get(k));
                 }
             } else if(jenisKoleksi.matches("Buku/Majalah")){
                 if(koleksiList.get(k) instanceof BukuMajalah && koleksiList.get(k).getStokTersedia() > 0){
-                    collections[k] = Integer.toString(koleksiList.get(k).getIdKoleksi());
                     dataList.add(koleksiList.get(k));
                 }
             }
         }
         listKoleksi(false, dataList);
+        String[] collections = new String[dataList.size()];
+        int indexer = 0;
+        for(Koleksi koleksi : dataList){
+            collections[indexer] = Integer.toString(koleksi.getIdKoleksi());
+            indexer++;
+        }
         String idKoleksi = enumeratorSilence(collections);
-        for(int j = 0; j < collections.length; j++){
+        for(int j = 0; j < dataList.size(); j++){
             if(idKoleksi.matches(collections[j])){
                 collectionIndex = j;
             }
         }
-        int jumlahPinjam = inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, koleksiList.get(collectionIndex).getStokTersedia());
-        peminjamanList.add(new Peminjaman(transaksiList.getLast(), jumlahPinjam, koleksiList.get(collectionIndex)));
-        koleksiList.get(collectionIndex).setStokTersedia(koleksiList.get(collectionIndex).getStok() - jumlahPinjam);
+        int jumlahPinjam = inputInt("Jumlah Pinjaman Koleksi Ini: ", 1, dataList.get(collectionIndex).getStokTersedia());
+        peminjamanList.add(new Peminjaman(transaksiList.getLast(), jumlahPinjam, dataList.get(collectionIndex)));
+        dataList.get(collectionIndex).setStokTersedia(dataList.get(collectionIndex).getStokTersedia() - jumlahPinjam);
     }
 
     public static void addKoleksi(){
